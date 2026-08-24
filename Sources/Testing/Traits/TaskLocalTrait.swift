@@ -22,11 +22,11 @@ extension Trait {
   ///     providing scope for the test.
   ///
   /// - Note: You must define the task local outside the test target where the trait is used.
-  public static func taskLocal<Value: Sendable>(
+  public static func taskLocal<Value: Sendable, Failure: Error>(
     _ taskLocal: TaskLocal<Value>,
-    withValue value: @autoclosure @escaping @Sendable () throws -> Value
+    withValue value: @autoclosure @escaping @Sendable () throws(Failure) -> Value
   ) -> Self
-  where Self == TaskLocalTrait<Value> {
+  where Self == TaskLocalTrait<Value, Failure> {
     TaskLocalTrait(taskLocal: taskLocal, value: value)
   }
 }
@@ -34,15 +34,15 @@ extension Trait {
 /// A type that that binds a task local value for the duration of a test or suite.
 ///
 /// To add this trait to a test, use ``Trait/taskLocal(_:_:)``.
-public struct TaskLocalTrait<Value: Sendable>: SuiteTrait, TestTrait, TestScoping {
+public struct TaskLocalTrait<Value: Sendable, Failure: Error>: SuiteTrait, TestTrait, TestScoping {
   /// This trait's task local.
   public var taskLocal: TaskLocal<Value>
 
   /// This trait's value.
-  fileprivate var value: @Sendable () throws -> Value
+  fileprivate var value: @Sendable () throws(Failure) -> Value
 
   /// Evaluate this trait's bound value.
-  public func evaluate() async throws -> Value {
+  public func evaluate() async throws(Failure) -> Value {
     try value()
   }
 
